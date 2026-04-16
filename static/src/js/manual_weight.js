@@ -3,79 +3,85 @@
 const ProductScreen = require('point_of_sale.ProductScreen');
 const Registries = require('point_of_sale.Registries');
 
-const DEFAULT_MIN_GRAMS = 10;
-const DEFAULT_MAX_GRAMS = 100000;  // 100 kg par défaut si rien n'est configuré
+// 🔥 LOG AU CHARGEMENT
+console.log("POS MODULE LOADED:", new Date().toLocaleString());
+
+async function getWeightFromScale() {
+    try {
+        const response = await fetch("http://100.67.124.17:5000/weight");
+
+        const text = await response.text();
+
+        console.log("RAW WEIGHT:", text, "|", new Date().toLocaleTimeString());
+
+        const weight = parseFloat(text);
+
+        if (!isNaN(weight)) {
+            return weight;
+        }
+
+    } catch (error) {
+        console.log("Scale error:", error);
+    }
+
+    return null;
+}
 
 const ManualWeightProductScreen = (ProductScreen) =>
-    class extends ProductScreen {
-        async _clickProduct(event) {
-            if (!this.currentOrder) {
-                this.env.pos.add_new_order();
-            }
+class extends ProductScreen {
 
+    async _clickProduct(event) {
+        try {
             const product = event.detail;
 
-            // 👉 Popup uniquement pour les produits "À peser avec une balance"
+            console.log("CLICK PRODUCT:", product.display_name, "|", new Date().toLocaleTimeString());
+
             if (product.to_weight) {
-                const config = this.env.pos.config || {};
-                const minGrams = config.x_min_weight_grams || DEFAULT_MIN_GRAMS;
-                const maxGrams = config.x_max_weight_grams || DEFAULT_MAX_GRAMS;
-                const enableNote = !!config.x_enable_weight_note;
+
+                const weight = await getWeightFromScale();
+
+                console.log("WEIGHT TEST:", weight, "|", new Date().toLocaleTimeString());
+
+                // ✅ balance OK
+                if (weight && weight > 0) {
+                    console.log("ADDING PRODUCT WITH WEIGHT:", weight);
+
+                    this.env.pos.get_order().add_product(product, {
+                        quantity: weight
+                    });
+                    return;
+                }
+
+                console.log("FALLBACK MANUAL");
 
                 const { confirmed, payload } = await this.showPopup('NumberPopup', {
-                    title: this.env._t('Poids NET en grammes'),
+                    title: "Poids (kg)",
                     startingValue: 0,
                     isInputSelected: true,
                 });
 
-                if (!confirmed || !payload) {
-                    return; // annulé
-                }
-
-                let grams = parseFloat(payload.toString().replace(',', '.')) || 0;
-                grams = Math.round(grams);
-
-                // 🔻 Contrôle mini
-                if (grams < minGrams) {
-                    await this.showPopup('ErrorPopup', {
-                        title: this.env._t('Poids trop faible'),
-                        body: this.env._t(
-                            `Poids saisi : ${grams} g.\nPoids minimum accepté : ${minGrams} g.`
-                        ),
-                    });
+                if (!confirmed) {
                     return;
                 }
 
-                // 🔺 Contrôle maxi
-                if (grams > maxGrams) {
-                    await this.showPopup('ErrorPopup', {
-                        title: this.env._t('Poids trop élevé'),
-                        body: this.env._t(
-                            `Poids saisi : ${grams} g.\nPoids maximum autorisé : ${maxGrams} g.`
-                        ),
+                const manualWeight = parseFloat(payload);
+
+                if (!isNaN(manualWeight) && manualWeight > 0) {
+                    this.env.pos.get_order().add_product(product, {
+                        quantity: manualWeight
                     });
-                    return;
-                }
-
-                // conversion g -> kg pour Odoo (produit configuré en kg)
-                const quantity = grams / 1000.0;
-
-                await this._addProduct(product, { quantity });
-
-                // 📝 Note automatique sur la ligne (si activée et méthode dispo)
-                const order = this.currentOrder;
-                const lastLine = order && order.get_last_orderline();
-                if (lastLine && enableNote && typeof lastLine.set_note === 'function') {
-                    lastLine.set_note(`${grams} g`);
                 }
 
                 return;
             }
 
-            // 👉 Produits normaux → comportement POS standard
             return super._clickProduct(event);
+
+        } catch (err) {
+            console.error("POS ERROR:", err);
         }
-    };
+    }
+};
 
 Registries.Component.extend(ProductScreen, ManualWeightProductScreen);
 
