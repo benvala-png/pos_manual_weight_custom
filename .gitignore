@@ -1,6 +1,21 @@
+# Python
 __pycache__/
 *.pyc
 *.pyo
-*.py.save
-*.js.save
+*.pyd
+
+# Editor / temp saves
+*.save
+*.bak
+*.swp
+*.swo
+
+# Backup / draft copies
 Copy of *
+
+# Odoo compiled assets
+/static/description/index.html
+
+# OS
+.DS_Store
+Thumbs.db

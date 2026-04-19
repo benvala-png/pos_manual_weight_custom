@@ -1,122 +1,77 @@
-POS Manual Weight (Custom) — Module Odoo 16
+# POS Manual Weight Custom
 
-Module Odoo permettant la saisie manuelle du poids directement depuis le Point de Vente (PoS), avec des options avancées : poids minimum / maximum, saisie en grammes, validation automatique, ajout de notes, etc.
+Odoo 16 module for manual weight entry in the Point of Sale interface.
 
-🚀 Fonctionnalités principales
+When a cashier clicks a product marked as "sold by weight", the module first attempts to read the weight from a connected HTTP scale. If the scale is unreachable, a manual input popup opens so the cashier can type the weight in kilograms.
 
-🔢 Saisie manuelle du poids via une fenêtre popup dans le PdV
+## Features
 
-⚖️ Poids en grammes (g)
+- Automatic scale reading via HTTP endpoint (configurable IP)
+- Fallback popup for manual weight entry (kg)
+- Configurable minimum and maximum weight per POS configuration
+- Optional weight note added to the order line
+- Compatible with Odoo 16 Community and Enterprise
 
-🛑 Blocage si poids inférieur au minimum
+## Installation
 
-🟩 Blocage si poids supérieur au maximum
+1. Copy the module into your custom addons directory:
 
-📝 Ajout automatique d’une note sur la ligne de ticket (poids saisi)
+   ```
+   /opt/odoo/odoo16/custom_addons/pos_manual_weight_custom
+   ```
 
-🔐 Paramètres configurables par PdV :
+2. Make sure the path is listed in `odoo.conf`:
 
-Poids minimum
+   ```ini
+   addons_path = /opt/odoo/odoo16/addons,/opt/odoo/odoo16/custom_addons
+   ```
 
-Poids maximum
+3. Restart Odoo:
 
-Note sur ligne de ticket (oui/non)
+   ```bash
+   sudo systemctl restart odoo
+   ```
 
+4. Go to **Point of Sale > Configuration > Point of Sale**, open your POS, and configure the module options.
 
+## Configuration
 
-🖼️ Démo rapide
+In the POS settings form (under **Poids manuel**):
 
-Lorsqu’un produit "Pesable" est ajouté :
+| Field | Description |
+|---|---|
+| Poids minimum (g) | Minimum allowed weight in grams |
+| Poids maximum (g) | Maximum allowed weight in grams |
+| Note de poids sur la ligne | Append the entered weight as a note on the order line |
 
-1. Une popup s’ouvre automatiquement
+## Module Structure
 
-
-2. L’utilisateur encode le poids (en grammes)
-
-
-3. Vérification des limites min/max
-
-
-4. Le PoS met à jour la quantité au prorata du poids
-
-
-5. Une note peut être ajoutée sur la ligne (ex : “Poids saisi : 326 g”)
-
-
-
-⚙️ Installation
-
-1. Copier le module dans vos custom addons
-
-/opt/odoo/odoo16/custom_addons/pos_manual_weight_custom
-
-2. Vérifier que le chemin est présent dans odoo.conf
-
-addons_path = /opt/odoo/odoo16/addons,/opt/odoo/odoo16/custom_addons
-
-3. Redémarrer Odoo
-
-sudo systemctl restart odoo
-
-4. Aller dans :
-
-Point de Vente → Configuration → Point de Vente → (Votre PdV)
-Activer les options du module.
-
-🔧 Configuration
-
-Paramètres dans le PdV
-
-Poids minimum (g) : ex. 10
-
-Poids maximum (g) : ex. 10 000
-
-Note sur ligne : cochez pour ajouter “Poids : X g”
-
-
-📁 Structure du module
-
+```
 pos_manual_weight_custom/
-│-- __manifest__.py
-│-- __init__.py
-│-- models/
-│   └── pos_config.py
-│-- static/
-│   └── js/
-│       └── manual_weight.js
-│-- views/
-│   └── pos_config_view.xml
-│   └── pos_weight_popup.xml
+├── __manifest__.py
+├── __init__.py
+├── models/
+│   └── pos_config.py        # Adds min/max weight and note fields to pos.config
+├── static/src/
+│   ├── js/
+│   │   └── manual_weight.js # Overrides product click to trigger scale/popup
+│   └── xml/
+│       └── manual_weight_popup.xml
+└── views/
+    └── pos_config_view.xml  # Injects weight fields into POS config form
+```
 
-🛠️ Fonctionnement technique
+## How It Works
 
-Étend pos.config pour ajouter les champs min/max + option note
+1. `models/pos_config.py` extends `pos.config` with three new fields (`x_min_weight_grams`, `x_max_weight_grams`, `x_enable_weight_note`).
+2. `manual_weight.js` overrides `ProductScreen._clickProduct`. For products with `to_weight = true`, it first calls `GET http://<scale-ip>:5000/weight`. If a valid weight is returned it is used directly; otherwise a `NumberPopup` opens for manual entry.
+3. The quantity on the order line is set to the weight value (in kg).
 
-Injecte une popup JavaScript dans l’interface PoS
+## Requirements
 
-Override de la méthode d’ajout de produits pour forcer la saisie du poids
+- Odoo 16
+- `point_of_sale` module
 
-Conversion g → kg (divisé par 1000) avant calcul Odoo
+## License
 
-Ajout facultatif d’une note via orderline.set_note()
-
-
-🧪 Compatibilité
-
-✔️ Odoo 16
-
-✔️ Point de Vente (Frontend OWL)
-
-❌ Non compatible Offline (mode IoT déconnecté)
-
-
-🤝 Contribution
-
-Pull requests bienvenues !
-Pour toute amélioration, bugfix ou suggestion :
-👉 Issues GitHub directement sur ce dépôt.
-
-📄 Licence
-
-Ce module est publié sous licence MIT (à adapter selon ton choix).
-
+LGPL-3
