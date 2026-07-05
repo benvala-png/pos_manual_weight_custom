@@ -3,8 +3,9 @@
 const ProductScreen = require('point_of_sale.ProductScreen');
 const Registries = require('point_of_sale.Registries');
 
-const SCALE_URL     = "http://100.81.17.17:8073/weight";
-const FETCH_TIMEOUT = 1000; // ms — garde-fou JS (proxy répond déjà en < 500ms)
+const SCALE_URL        = "http://100.81.17.17:8073/weight";
+const FETCH_TIMEOUT    = 1000;  // ms — garde-fou JS (proxy répond déjà en < 500ms)
+const MAX_MANUAL_GRAMS = 50000; // 50 kg — plafond anti faute de frappe
 
 const isLocalNetwork = window.location.hostname.includes('localhost') ||
                        window.location.hostname.startsWith('192.168') ||
@@ -75,8 +76,10 @@ class extends ProductScreen {
                 });
                 if (!confirmed) return;
                 const manualGrams = parseFloat(payload);
-                if (!isNaN(manualGrams) && manualGrams > 0) {
+                if (!isNaN(manualGrams) && manualGrams > 0 && manualGrams < MAX_MANUAL_GRAMS) {
                     this.env.pos.get_order().add_product(product, { quantity: manualGrams / 1000 });
+                } else if (manualGrams >= MAX_MANUAL_GRAMS) {
+                    console.log(`MANUAL WEIGHT REJECTED: ${manualGrams}g ≥ ${MAX_MANUAL_GRAMS}g cap`);
                 }
                 return;
 
@@ -89,9 +92,11 @@ class extends ProductScreen {
                     isInputSelected: true,
                 });
                 if (!confirmed) return;
-                const manualWeight = parseFloat(payload) / 1000;
-                if (!isNaN(manualWeight) && manualWeight > 0) {
-                    this.env.pos.get_order().add_product(product, { quantity: manualWeight });
+                const manualGramsRemote = parseFloat(payload);
+                if (!isNaN(manualGramsRemote) && manualGramsRemote > 0 && manualGramsRemote < MAX_MANUAL_GRAMS) {
+                    this.env.pos.get_order().add_product(product, { quantity: manualGramsRemote / 1000 });
+                } else if (manualGramsRemote >= MAX_MANUAL_GRAMS) {
+                    console.log(`MANUAL WEIGHT REJECTED: ${manualGramsRemote}g ≥ ${MAX_MANUAL_GRAMS}g cap`);
                 }
                 return;
             }
