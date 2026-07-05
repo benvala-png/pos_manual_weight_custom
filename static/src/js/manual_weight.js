@@ -69,36 +69,46 @@ class extends ProductScreen {
 
                 // Balance indisponible (503 / timeout) → saisie manuelle en grammes
                 console.log("SCALE UNAVAILABLE — manual input");
-                const { confirmed, payload } = await this.showPopup('NumberPopup', {
-                    title: "Poids (g)",
-                    startingValue: 0,
-                    isInputSelected: true,
-                });
-                if (!confirmed) return;
-                const manualGrams = parseFloat(payload);
-                if (!isNaN(manualGrams) && manualGrams > 0 && manualGrams < MAX_MANUAL_GRAMS) {
-                    this.env.pos.get_order().add_product(product, { quantity: manualGrams / 1000 });
-                } else if (manualGrams >= MAX_MANUAL_GRAMS) {
-                    console.log(`MANUAL WEIGHT REJECTED: ${manualGrams}g ≥ ${MAX_MANUAL_GRAMS}g cap`);
+                while (true) {
+                    const { confirmed, payload } = await this.showPopup('NumberPopup', {
+                        title: "Poids (g)",
+                        startingValue: 0,
+                        isInputSelected: true,
+                    });
+                    if (!confirmed) return;
+                    const manualGrams = parseFloat(payload);
+                    if (isNaN(manualGrams) || manualGrams <= 0) return;
+                    if (manualGrams < MAX_MANUAL_GRAMS) {
+                        this.env.pos.get_order().add_product(product, { quantity: manualGrams / 1000 });
+                        return;
+                    }
+                    await this.showPopup('ErrorPopup', {
+                        title: "Poids invalide",
+                        body: `${manualGrams}g dépasse le maximum autorisé (${MAX_MANUAL_GRAMS / 1000}kg).`,
+                    });
                 }
-                return;
 
             } else if (product.to_weight) {
                 // GSM / réseau distant → popup direct, zéro appel balance
                 console.log("REMOTE DEVICE — manual input (no scale call)");
-                const { confirmed, payload } = await this.showPopup('NumberPopup', {
-                    title: "Poids (g)",
-                    startingValue: 0,
-                    isInputSelected: true,
-                });
-                if (!confirmed) return;
-                const manualGramsRemote = parseFloat(payload);
-                if (!isNaN(manualGramsRemote) && manualGramsRemote > 0 && manualGramsRemote < MAX_MANUAL_GRAMS) {
-                    this.env.pos.get_order().add_product(product, { quantity: manualGramsRemote / 1000 });
-                } else if (manualGramsRemote >= MAX_MANUAL_GRAMS) {
-                    console.log(`MANUAL WEIGHT REJECTED: ${manualGramsRemote}g ≥ ${MAX_MANUAL_GRAMS}g cap`);
+                while (true) {
+                    const { confirmed, payload } = await this.showPopup('NumberPopup', {
+                        title: "Poids (g)",
+                        startingValue: 0,
+                        isInputSelected: true,
+                    });
+                    if (!confirmed) return;
+                    const manualGramsRemote = parseFloat(payload);
+                    if (isNaN(manualGramsRemote) || manualGramsRemote <= 0) return;
+                    if (manualGramsRemote < MAX_MANUAL_GRAMS) {
+                        this.env.pos.get_order().add_product(product, { quantity: manualGramsRemote / 1000 });
+                        return;
+                    }
+                    await this.showPopup('ErrorPopup', {
+                        title: "Poids invalide",
+                        body: `${manualGramsRemote}g dépasse le maximum autorisé (${MAX_MANUAL_GRAMS / 1000}kg).`,
+                    });
                 }
-                return;
             }
 
             return super._clickProduct(event);
