@@ -3,7 +3,7 @@
 const ProductScreen = require('point_of_sale.ProductScreen');
 const Registries = require('point_of_sale.Registries');
 
-const SCALE_URL        = "http://100.81.17.17:8073/weight";
+const SCALE_URL        = "http://localhost:5000/weight";  // script Flask du poste de caisse (avant : relais du Pi « ben » 100.81.17.17:8073)
 const FETCH_TIMEOUT    = 1000;  // ms — garde-fou JS (proxy répond déjà en < 500ms)
 const MAX_MANUAL_GRAMS = 50000; // 50 kg — plafond anti faute de frappe
 
@@ -34,10 +34,19 @@ async function getWeightFromScale() {
             return null;
         }
 
-        const data = await response.json();
-        console.log(`SCALE RESPONSE (${elapsed} ms):`, data);
+        // Deux formats coexistent : le script local renvoie du texte brut ("0.0000"),
+        // l'ancien relais du Pi du JSON ({"weight":0.0,"unit":"kg",...}). On lit en
+        // texte et on accepte les deux, pour que l'URL puisse changer sans casser.
+        const raw = (await response.text()).trim();
+        console.log(`SCALE RESPONSE (${elapsed} ms):`, raw);
 
-        const weight = parseFloat(data.weight);
+        let weight;
+        try {
+            const parsed = JSON.parse(raw);
+            weight = parseFloat(parsed !== null && typeof parsed === "object" ? parsed.weight : parsed);
+        } catch (e) {
+            weight = parseFloat(raw);
+        }
         return isNaN(weight) ? null : weight;
 
     } catch (error) {
