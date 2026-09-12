@@ -6,6 +6,12 @@ const Registries = require('point_of_sale.Registries');
 const SCALE_URL        = "http://localhost:5000/weight";  // script Flask du poste de caisse (avant : relais du Pi « ben » 100.81.17.17:8073)
 const FETCH_TIMEOUT    = 1000;  // ms — garde-fou JS (proxy répond déjà en < 500ms)
 const MAX_MANUAL_GRAMS = 50000; // 50 kg — plafond anti faute de frappe
+// Portée maximale de la balance. Au-delà elle refuse de peser et affiche une
+// erreur ("Err 8.3" le 2026-09-12) — mais le script Flask du poste en extrait
+// le nombre et renvoie 8.3, que la caisse ajoutait comme 8,3 kg de
+// marchandise. AUCUNE lecture au-dessus de cette portée ne peut être vraie :
+// si la balance ne sait pas peser 4 kg, elle ne peut pas en annoncer 8.
+const MAX_SCALE_KG     = 3;
 
 const isLocalNetwork = window.location.hostname.includes('localhost') ||
                        window.location.hostname.startsWith('192.168') ||
@@ -47,7 +53,19 @@ async function getWeightFromScale() {
         } catch (e) {
             weight = parseFloat(raw);
         }
-        return isNaN(weight) ? null : weight;
+        if (isNaN(weight)) {
+            return null;
+        }
+        // Hors portée = la balance est en erreur, pas chargée. On rend `null`,
+        // donc la caisse bascule en saisie manuelle comme lorsqu'elle est
+        // injoignable : mieux vaut faire retaper un poids que d'en facturer un
+        // faux.
+        if (weight > MAX_SCALE_KG) {
+            console.log(`SCALE OUT OF RANGE: ${weight} kg > ${MAX_SCALE_KG} kg `
+                        + `— lecture refusée (balance en erreur / surcharge)`);
+            return null;
+        }
+        return weight;
 
     } catch (error) {
         clearTimeout(timer);

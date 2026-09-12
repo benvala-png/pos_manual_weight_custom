@@ -1,6 +1,6 @@
 {
     'name': 'POS Manual Weight (Custom)',
-    'version': '16.0.1.0.0',
+    'version': '16.0.1.1.0',
     'category': 'Point of Sale',
     'summary': 'Saisie manuelle du poids (en grammes) pour les articles vendus au poids dans le Point de Vente',
     'description': """
