@@ -107,6 +107,7 @@ pos_manual_weight_custom/
     │   ├── js/manual_weight.js         # Appel balance, popup manuelle, plafond en dur
     │   └── xml/manual_weight_popup.xml
     └── tools/
+        ├── scale_server.py              # Le script lui-même (Flask + liaison série)
         ├── README.md                    # Démarrage automatique du script balance (Windows)
         └── setup_balance_autostart.ps1
 ```
