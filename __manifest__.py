@@ -18,7 +18,7 @@ Fonctionnalités
 - Compatible avec Odoo 16 Community et Enterprise
 
 """,
-    'author': 'Benjamin + ChatGPT',
+    'author': 'Benjamin Van Laethem',
     'website': 'https://github.com/benvala-png/pos_manual_weight_custom',
     'license': 'LGPL-3',
     'depends': ['point_of_sale'],

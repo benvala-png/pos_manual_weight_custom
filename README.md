@@ -1,5 +1,9 @@
 # pos_manual_weight_custom (Odoo 16)
 
+> **In English —** Weighing loose products at the till without an IoT Box. When a weighted product is selected, the POS reads the scale over a local HTTP endpoint and adds the line directly; if the scale does not answer, a manual entry popup (grams) opens, with a 50 kg cap against typing errors.
+
+*Documentation below is in French.*
+
 Addon Odoo 16 pour la saisie du poids dans le Point de Vente. Quand la
 caissière clique sur un produit vendu au poids, le module interroge d'abord
 la balance connectée en HTTP ; si elle ne répond pas, une popup de saisie
@@ -37,8 +41,8 @@ lui-même**, port 5000) est un composant séparé, hors de ce module — voir
 ### La chaîne balance
 
 `http://localhost:5000/weight` — un script Flask tournant **sur le poste de
-caisse**. Avant le 19/08/2026, la lecture passait par un relais sur le Pi
-« ben » (`100.81.17.17:8073`) ; le Pi s'étant éteint sans que la panne soit
+caisse**. Avant le 19/08/2026, la lecture passait par un relais sur un Raspberry Pi
+`<SCALE_HOST>:8073` ; le Pi s'étant éteint sans que la panne soit
 visible, la lecture a été ramenée en local.
 
 Deux formats de réponse coexistent et sont acceptés tous les deux : texte

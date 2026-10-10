@@ -3,7 +3,7 @@
 const ProductScreen = require('point_of_sale.ProductScreen');
 const Registries = require('point_of_sale.Registries');
 
-const SCALE_URL        = "http://localhost:5000/weight";  // script Flask du poste de caisse (avant : relais du Pi « ben » 100.81.17.17:8073)
+const SCALE_URL        = "http://localhost:5000/weight";  // script Flask du poste de caisse (avant : relais Raspberry Pi <SCALE_HOST>:8073)
 const FETCH_TIMEOUT    = 1000;  // ms — garde-fou JS (proxy répond déjà en < 500ms)
 const MAX_MANUAL_GRAMS = 50000; // 50 kg — plafond anti faute de frappe
 // Portée maximale de la balance. Au-delà elle refuse de peser et affiche une

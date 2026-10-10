@@ -14,7 +14,7 @@ commande du processus à l'écoute et la rejoue à l'identique, arguments COM et
 baud compris).
 
 ```powershell
-$u = "http://192.168.129.19:8069/pos_manual_weight_custom/static/tools/setup_balance_autostart.ps1"
+$u = "http://<ODOO_HOST>:8069/pos_manual_weight_custom/static/tools/setup_balance_autostart.ps1"
 Invoke-WebRequest $u -OutFile "$env:TEMP\setup_balance_autostart.ps1"
 Unblock-File "$env:TEMP\setup_balance_autostart.ps1"
 Set-ExecutionPolicy -Scope Process Bypass -Force
